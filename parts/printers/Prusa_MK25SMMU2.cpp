@@ -35,14 +35,22 @@
 void Prusa_MK25SMMU2::SetupHardware()
 {
 	Prusa_MK25S_13::SetupHardware();
-	TryConnect(MMU_HWRESET,&m_MMU,MMU2::RESET);
+	// TryConnect(MMU_HWRESET,&m_MMU,MMU2::RESET);
 	m_IR.Set(IRSensor::IR_AUTO);
 	avr_irq_register_notify(m_MMU.GetIRQ(MMU2::FEED_DISTANCE), MAKE_C_CALLBACK(Prusa_MK25SMMU2,OnMMUFeed),this);
-
+	m_pipe.reset(new SerialPipe(UART2.GetSlaveName(), m_MMU.GetSerialPort())); //NOLINT suggestion is c++14 and higher
+	if (GetHasMMU() != MMUType::NONE)
+	{
+		m_MMU.StartAVR();
+		std ::cout << "MMU2 started" << std::endl;
+	}
+	else {
+		std ::cout << "MMU2 not started" << std::endl;
+	}
 	// Note we can't directly connect the MMU or you'll get serial flow issues/lost bytes.
 	// The serial_pipe thread lets us reuse the UART_PTY code and its internal xon/xoff/buffers
 	// rather than having to roll our own internal FIFO. As an added bonus you can tap the ports for debugging.
-	m_pipe.reset(new SerialPipe(UART2.GetSlaveName(), m_MMU.GetSerialPort())); //NOLINT suggestion is c++14 and higher
+	// m_pipe.reset(new SerialPipe(UART2.GetSlaveName(), m_MMU.GetSerialPort())); //NOLINT suggestion is c++14 and higher
 }
 
 void Prusa_MK25SMMU2::OnVisualTypeSet(const std::string &type)
